@@ -42,6 +42,7 @@ for candidate in candidates:
     for letter in candidate:
         if letter not in checked:
             alphabet[letter] = alphabet[letter] + 1
+            checked.add(letter)
 
 sortedAlphabet = OrderedDict(sorted(alphabet.items(), key=lambda x: x[1])) 
 
@@ -56,9 +57,11 @@ extracted = []
 
 for candidate in candidates:
     count = 0
+    checked = set()
     for letter in candidate:
-        if letter in mostUsedLetters:
+        if letter in mostUsedLetters and letter not in checked:
             count = count + 1
+            checked.add(letter)
     extracted.append([candidate, count])
 
 sortedExtracted = list(sorted(extracted, key= lambda x: x[1]))
@@ -69,8 +72,8 @@ for i in range(c):
     mostUsedWords.append(sortedExtracted[len(sortedExtracted) - 1 - i][0])
 
 #choose an answer key for testing
-y_hat = random.choice(mostUsedWords, 1)[0]
-mostUsedWords.remove(y_hat)
+y_hat = random.choice(candidates, 1)[0]
+candidates.remove(y_hat)
 won = False
 
 yellow_knowledge = set()
@@ -98,80 +101,85 @@ print("Yellow Knowledge:", yellow_knowledge)
 print("Green Knowledge:", green_knowledge)
 print()
 
-#second try onwards
-for i in range(1, 5, 1):
+try:
 
-    end = True
-    for k in green_knowledge:
-        if k is '':
-            end = False
-    if end:
-        print("Congrats, the word is", ''.join(green_knowledge), '!!!')
-        won = True
-        break
+    #second try onwards
+    for i in range(1, 5, 1):
 
-    #narrow down according to knowledge
-    wordsWithYellowSimilarity = {}
-    for candidate in candidates:
-        wordsWithYellowSimilarity[candidate] = len(set(candidate).intersection(yellow_knowledge))
-    maximum = wordsWithYellowSimilarity[max(wordsWithYellowSimilarity, key=wordsWithYellowSimilarity.get)]
-    yellowedCandidates = list(filter(lambda x: wordsWithYellowSimilarity[x] == maximum, wordsWithYellowSimilarity))
+        end = True
+        for k in green_knowledge:
+            if k is '':
+                end = False
+        if end:
+            print("Congrats, the word is", ''.join(green_knowledge), '!!!')
+            won = True
+            break
 
-    greenedCandidates = yellowedCandidates
+        #narrow down according to knowledge
+        wordsWithYellowSimilarity = {}
+        for candidate in candidates:
+            wordsWithYellowSimilarity[candidate] = len(set(candidate).intersection(yellow_knowledge))
+        maximum = wordsWithYellowSimilarity[max(wordsWithYellowSimilarity, key=wordsWithYellowSimilarity.get)]
+        yellowedCandidates = list(filter(lambda x: wordsWithYellowSimilarity[x] == maximum, wordsWithYellowSimilarity))
 
-    if foundGreen:
-        exp = ''
-        for gL in green_knowledge:
-            if gL is not '':
-                exp = exp + gL
-            else:
-                exp = exp + '.'
-        regex = re.compile(exp)
-        greenedCandidates = [candidate for candidate in yellowedCandidates if re.match(regex, candidate)]
+        greenedCandidates = yellowedCandidates
 
-    #find the words with biggest difference in the narrowed space
-    wordsWithDistance = {}
-    for candidate in greenedCandidates:
-        dist = 5
-        checked = -1
-        for l in range(len(candidate)):
-            for tried in triedWords:
-                if candidate[l] in tried and l is not checked:
-                    dist = dist - 1
+        if foundGreen:
+            exp = ''
+            for gL in green_knowledge:
+                if gL is not '':
+                    exp = exp + gL
+                else:
+                    exp = exp + '.'
+            regex = re.compile(exp)
+            greenedCandidates = [candidate for candidate in yellowedCandidates if re.match(regex, candidate)]
+
+        #find the words with biggest difference in the narrowed space
+        wordsWithDistance = {}
+        for candidate in greenedCandidates:
+            dist = 5
+            checked = -1
+            for l in range(len(candidate)):
+                for tried in triedWords:
+                    if candidate[l] in tried and l is not checked:
+                        dist = dist - 1
+                        checked = checked + 1
+                if l is not checked:
                     checked = checked + 1
-            if l is not checked:
-                checked = checked + 1
-        wordsWithDistance[candidate] = dist
-    maximum = wordsWithDistance[max(wordsWithDistance, key=wordsWithDistance.get)]
-    candidates = list(filter(lambda x: wordsWithDistance[x] == maximum, wordsWithDistance))
+            wordsWithDistance[candidate] = dist
+        maximum = wordsWithDistance[max(wordsWithDistance, key=wordsWithDistance.get)]
+        candidates = list(filter(lambda x: wordsWithDistance[x] == maximum, wordsWithDistance))
 
-    ithTry = random.choice(candidates, 1)[0]
-    candidates.remove(ithTry)
-    triedWords.append(ithTry)
-    print("Try #", i + 1, ":", ithTry)
-    input()
+        ithTry = random.choice(candidates, 1)[0]
+        candidates.remove(ithTry)
+        triedWords.append(ithTry)
+        print("Try #", i + 1, ":", ithTry)
+        input()
 
-    #update knowledge
-    for l in range(len(ithTry)):
-        if ithTry[l] is y_hat[l]:
-            green_knowledge[l] = ithTry[l]
-            foundGreen = True
-        if ithTry[l] in y_hat:
-            yellow_knowledge.add(ithTry[l])
+        #update knowledge
+        for l in range(len(ithTry)):
+            if ithTry[l] is y_hat[l]:
+                green_knowledge[l] = ithTry[l]
+                foundGreen = True
+            if ithTry[l] in y_hat:
+                yellow_knowledge.add(ithTry[l])
 
-    print("Tried words:", triedWords)
-    print("Yellow Knowledge:", yellow_knowledge)
-    print("Green Knowledge:", green_knowledge)
-    print()
+        print("Tried words:", triedWords)
+        print("Yellow Knowledge:", yellow_knowledge)
+        print("Green Knowledge:", green_knowledge)
+        print()
 
-    end = True
-    for k in green_knowledge:
-        if k is '':
-            end = False
-    if end:
-        print("Congrats, the word is", ''.join(green_knowledge), '!!!')
-        won = True
-        break
+        end = True
+        for k in green_knowledge:
+            if k is '':
+                end = False
+        if end:
+            print("Congrats, the word is", ''.join(green_knowledge), '!!!')
+            won = True
+            break
 
-if not won:
-    print("Better luck next time!!!")
+    if not won:
+        print("Better luck next time!!!")
+
+except:
+    print("Oops, Something happened and the program crashed :( Please try again!")
